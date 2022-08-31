@@ -429,8 +429,11 @@ document.onload = (function(d3, saveAs, Blob, undefined){
       state.justScaleTransGraph = false;
     } else if (state.graphMouseDown && d3.event.shiftKey){
       // clicked not dragged from svg
+      var extraString = "stringify json?"
+      var metaData = {key:"value"}
+      
       var xycoords = d3.mouse(thisGraph.svgG.node()),
-          d = {id: thisGraph.idct++, title: consts.defaultTitle, x: xycoords[0], y: xycoords[1]};
+          d = {id: thisGraph.idct++, title: consts.defaultTitle, x: xycoords[0], y: xycoords[1], extraString:extraString, metaData: metaData};
       thisGraph.nodes.push(d);
       thisGraph.updateGraph();
       // make title of text immediently editable

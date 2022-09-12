@@ -416,6 +416,7 @@ document.onload = (function(d3, saveAs, Blob, undefined){
   }; // end of circles mouseup
 
   // mousedown on main svg
+  // ***** init node and data structure
   GraphCreator.prototype.svgMouseDown = function(){
     this.state.graphMouseDown = true;
   };
@@ -436,11 +437,13 @@ document.onload = (function(d3, saveAs, Blob, undefined){
           d = {id: thisGraph.idct++, title: consts.defaultTitle, x: xycoords[0], y: xycoords[1], extraString:extraString, metaData: metaData};
       thisGraph.nodes.push(d);
       thisGraph.updateGraph();
+      // console.log("create node:", d)
       // make title of text immediently editable
       var d3txt = thisGraph.changeTextOfNode(thisGraph.circles.filter(function(dval){
         return dval.id === d.id;
       }), d),
           txtNode = d3txt.node();
+      // console.log("txtNode: ", txtNode)
       thisGraph.selectElementContents(txtNode);
       txtNode.focus();
     } else if (state.shiftNodeDrag){

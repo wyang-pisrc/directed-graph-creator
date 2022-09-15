@@ -64,15 +64,16 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
     // svg nodes and edges
     thisGraph.paths = svgG.append("g").selectAll("g");
-    thisGraph.circles = svgG.append("g").selectAll("g");
+    thisGraph.circles = svgG.append("g").selectAll("g"); // all nodes
 
     thisGraph.drag = d3.behavior.drag()
       .origin(function (d) {
         return { x: d.x, y: d.y };
       })
-      .on("drag", function (args) {
+      .on("drag", function (d) {
         thisGraph.state.justDragged = true;
-        thisGraph.dragmove.call(thisGraph, args);
+        thisGraph.dragmove.call(thisGraph, d);
+        d3.select(this).select("text[text-type=location] tspan").text("(" + d.x + ", " + d.y + ")") // dynamics show x.y
       })
       .on("dragend", function () {
         // todo check if edge-mode is selected
@@ -124,6 +125,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       var blob = new Blob([window.JSON.stringify({ "nodes": thisGraph.nodes, "edges": saveEdges })], { type: "text/plain;charset=utf-8" });
       saveAs(blob, "mydag.json");
     });
+
 
 
     // handle uploaded data
@@ -238,6 +240,11 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     }
   };
 
+  GraphCreator.prototype.showXY = function (gEl, d) {
+    // console.log("init node: ", d)
+    var el = gEl.append("text").attr("text-anchor", "middle").attr("text-type", "location");
+    el.append('tspan').attr('dy', 30).text("(" + d.x + ", " + d.y + ")")
+  };
 
   // remove edges associated with a node
   GraphCreator.prototype.spliceLinksForNode = function (node) {
@@ -352,6 +359,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       .on("blur", function (d) {
         d.title = this.textContent;
         thisGraph.insertTitleLinebreaks(d3node, d.title);
+        thisGraph.showXY(d3node, d);
         d3.select(this.parentElement).remove();
       });
     return d3txt;
@@ -530,10 +538,10 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     paths.exit().remove();
 
     // update existing nodes
-    thisGraph.circles = thisGraph.circles.data(thisGraph.nodes, function (d) { return d.id; });
-    thisGraph.circles.attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; });
+    thisGraph.circles = thisGraph.circles.data(thisGraph.nodes, function (d) { return d.id; }); // targeting the data in this node
+    thisGraph.circles.attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; }); // update the data in transform based on d.x and d.y
 
-    // add new nodes
+    // add new nodes 
     var newGs = thisGraph.circles.enter()
       .append("g");
 
@@ -553,13 +561,25 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       .on("mouseup", function (d) {
         thisGraph.circleMouseUp.call(thisGraph, d3.select(this), d);
       })
+      // .on("mouseover", function (d) {
+      //   var rect = d3.select(this)
+      //     .attr("fill", "yellow");
+      // })
+      // .on("mouseout", function (d) {
+      //   var rect = d3.select(this)
+      //     .attr("fill", "blue");
+      // })
       .call(thisGraph.drag);
 
     newGs.append("circle")
       .attr("r", String(consts.nodeRadius));
 
+
+    // TODO: update nodes
     newGs.each(function (d) {
       thisGraph.insertTitleLinebreaks(d3.select(this), d.title);
+      thisGraph.showXY(d3.select(this), d);
+      console.log("break title: ", d.x, " ++ ", d.y)
     });
 
     // remove old nodes
@@ -610,6 +630,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
   var graph = new GraphCreator(svg, nodes, edges);
   graph.setIdCt(2);
   graph.updateGraph();
+
 
 
 })(window.d3, window.saveAs, window.Blob);

@@ -3,7 +3,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
   // TODO add user settings
   var consts = {
-    defaultTitle: "random variable"
+    defaultTitle: "way point"
   };
   var settings = {
     appendElSpec: "#graph"
@@ -66,6 +66,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     thisGraph.paths = svgG.append("g").selectAll("g");
     thisGraph.circles = svgG.append("g").selectAll("g"); // all nodes
 
+
+
     thisGraph.drag = d3.behavior.drag()
       .origin(function (d) {
         return { x: d.x, y: d.y };
@@ -74,9 +76,15 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
         thisGraph.state.justDragged = true;
         thisGraph.dragmove.call(thisGraph, d);
         d3.select(this).select("text[text-type=location] tspan").text("(" + d.x + ", " + d.y + ")") // dynamics show x.y
+        // .style("background-color", "red")
+        // thisGraph.buttonConfig(d3node, d);
+        // thisGraph.nodes.push(d);
+        // thisGraph.updateGraph();
+        // d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
       })
       .on("dragend", function () {
-        // todo check if edge-mode is selected
+        // todo check if edge-mode is selected //
+        //TODO: 需要转换到 选择当前拓转的 node
       });
 
     // listen for key events
@@ -116,6 +124,39 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     // listen for resize
     window.onresize = function () { thisGraph.updateWindow(svg); };
 
+    // thisGraph.circles.forEach((gEL) => gEL.on('click', function (d, i) { alert("??") })); // 因为是后续添加的, 所以 js 无法 bind?
+
+    // 
+    d3.selectAll("g g").on("click", function () {
+      // TODO: figure out why selector g g can work, g or g g g not work
+      console.log("click circle");
+
+      var selectedNode = d3.select(".selected") // this is d3node
+      // selectedNode.node() // 会转换为 html
+      if (selectedNode.size() != 0) {
+        var thisID = selectedNode.select("text.data-location").attr("node-id")
+        var d = thisGraph.nodes.filter(function (dval) {
+          return dval.id.toString() === thisID;
+        })[0]
+        // debugger
+        // console.log(d3node, d)
+        thisGraph.buttonConfig(selectedNode, d);
+        d3.select("#node-configuration-container").attr("visibility", "visible").attr("class", "visible");
+      }
+
+    })
+
+
+
+
+
+
+    svg.on("dblclick", function () {
+      d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
+      d3.event.stopPropagation();
+      console.log("check background");
+    })
+
     // handle download data
     d3.select("#download-input").on("click", function () {
       var saveEdges = [];
@@ -132,6 +173,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     d3.select("#upload-input").on("click", function () {
       document.getElementById("hidden-file-upload").click();
     });
+
+
     d3.select("#hidden-file-upload").on("change", function () {
       if (window.File && window.FileReader && window.FileList && window.Blob) {
         var uploadFile = this.files[0];
@@ -242,9 +285,35 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
   GraphCreator.prototype.showXY = function (gEl, d) {
     // console.log("init node: ", d)
-    var el = gEl.append("text").attr("text-anchor", "middle").attr("text-type", "location");
+    var el = gEl.append("text").attr("text-anchor", "middle").attr("text-type", "location").attr("node-id", d.id).attr("class", "data-location");
     el.append('tspan').attr('dy', 30).text("(" + d.x + ", " + d.y + ")")
   };
+
+  GraphCreator.prototype.buttonConfig = function (gEl, d) {
+
+    // var el = gEl.append("div").attr("class", "button")
+    // for (let key in d) {
+    //   var tspan = el.append('attribute').attr(key, d[key]).text(key + ":" + d[key]).style("height", "10px")
+    // }
+
+    if (d3.select("#nodeConfig form")) {
+      d3.select("#nodeConfig form").remove("form")
+    }
+    var el = d3.select("#nodeConfig").append("form").attr("id", "node-configuration-container").attr("visibility", "visible").attr("class", "visible")
+    for (let key in d) {
+      el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key]))
+    }
+
+
+  };
+
+  var generateTextInputHTML = function (id, label, fname, defaultValue) {
+    var html = "";
+    html += `<label for="${id}">${label}</label>`;
+    html += `<input type="text" id="${id}" name="${fname}"> ${JSON.stringify(defaultValue)}<br>`;
+    return html
+  }
+
 
   // remove edges associated with a node
   GraphCreator.prototype.spliceLinksForNode = function (node) {
@@ -329,7 +398,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     var thisGraph = this,
       consts = thisGraph.consts,
       htmlEl = d3node.node();
-    d3node.selectAll("text").remove();
+    d3node.selectAll("text").remove(); // clean duplicate element information
+    d3node.selectAll("div").remove();
     var nodeBCR = htmlEl.getBoundingClientRect(),
       curScale = nodeBCR.width / consts.nodeRadius,
       placePad = 5 * curScale,
@@ -360,10 +430,12 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
         d.title = this.textContent;
         thisGraph.insertTitleLinebreaks(d3node, d.title);
         thisGraph.showXY(d3node, d);
+        thisGraph.buttonConfig(d3node, d);
         d3.select(this.parentElement).remove();
       });
     return d3txt;
   };
+
 
   // mouseup on nodes
   GraphCreator.prototype.circleMouseUp = function (d3node, d) {
@@ -405,7 +477,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
           var d3txt = thisGraph.changeTextOfNode(d3node, d);
           var txtNode = d3txt.node();
           thisGraph.selectElementContents(txtNode);
-          txtNode.focus();
+          txtNode.focus(); // 是这里可以修改吗, 如果我要修改的是 x,y的话? 也是 focus?
         } else {
           if (state.selectedEdge) {
             thisGraph.removeSelectFromEdge();
@@ -443,19 +515,19 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       var extraString = "stringify json?"
       var metaData = { key: "value" }
 
-      var xycoords = d3.mouse(thisGraph.svgG.node()),
-        d = { id: thisGraph.idct++, title: consts.defaultTitle, x: xycoords[0], y: xycoords[1], extraString: extraString, metaData: metaData };
+      var xycoords = d3.mouse(thisGraph.svgG.node())
+      var d = { id: thisGraph.idct++, title: consts.defaultTitle, x: xycoords[0], y: xycoords[1], extraString: extraString, metaData: metaData };
       thisGraph.nodes.push(d);
       thisGraph.updateGraph();
       // console.log("create node:", d)
       // make title of text immediently editable
       var d3txt = thisGraph.changeTextOfNode(thisGraph.circles.filter(function (dval) {
         return dval.id === d.id;
-      }), d),
-        txtNode = d3txt.node();
+      }), d)
+      var txtNode = d3txt.node();
       // console.log("txtNode: ", txtNode)
       thisGraph.selectElementContents(txtNode);
-      txtNode.focus();
+      txtNode.focus(); // 选中 text
     } else if (state.shiftNodeDrag) {
       // dragged from node
       state.shiftNodeDrag = false;
@@ -579,7 +651,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     newGs.each(function (d) {
       thisGraph.insertTitleLinebreaks(d3.select(this), d.title);
       thisGraph.showXY(d3.select(this), d);
-      console.log("break title: ", d.x, " ++ ", d.y)
+      thisGraph.buttonConfig(d3.select(this), d);
+      console.log("create node location: ", d.x, " ++ ", d.y)
     });
 
     // remove old nodes

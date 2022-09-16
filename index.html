@@ -7,14 +7,18 @@
 
 <body>
   <!-- <body background="template.jpg"> -->
+  <div id="nodeConfig">nodeConfig place holder
+  </div>
+
   <div id="graph">
+    <!-- d3.js 只能在这里面 select, 外面需要用 JS document?  -->
     <div id="toolbox">
       <input type="file" id="hidden-file-upload"><input id="upload-input" type="image" title="upload graph"
         src="upload-icon.png" alt="upload graph"> <input type="image" id="download-input" title="download graph"
         src="download-icon.png" alt="download graph"> <input type="image" id="delete-graph" title="delete graph"
         src="trash-icon.png" alt="delete graph">
     </div>
-    
+
   </div>
 
   <script src="//d3js.org/d3.v3.js" charset="utf-8"></script>
@@ -23,5 +27,3 @@
 </body>
 
 </html>
-
-

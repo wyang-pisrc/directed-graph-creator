@@ -153,6 +153,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
     svg.on("dblclick", function () {
       d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
+      document.getElementById("node-save-button").click(); // auto save?
       d3.event.stopPropagation();
       console.log("check background");
     })
@@ -290,28 +291,93 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
   };
 
   GraphCreator.prototype.buttonConfig = function (gEl, d) {
+    var thisGraph = this;
 
-    // var el = gEl.append("div").attr("class", "button")
-    // for (let key in d) {
-    //   var tspan = el.append('attribute').attr(key, d[key]).text(key + ":" + d[key]).style("height", "10px")
-    // }
-
+    // remove previous form content
     if (d3.select("#nodeConfig form")) {
       d3.select("#nodeConfig form").remove("form")
     }
+
+    // targeting form container and insert node information
     var el = d3.select("#nodeConfig").append("form").attr("id", "node-configuration-container").attr("visibility", "visible").attr("class", "visible")
     for (let key in d) {
-      el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key]))
+      if (key == "id") {
+        el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key], "number", true))
+      } else if (key == "x" || key == "y") {
+        el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key], "number", false))
+      }
+      else {
+        el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key]))
+      }
+    }
+
+    // add button tag
+    el.append("div").attr("class", "button-container").html(`<button type="button" id="node-save-button" value="Save">save</button>`)
+
+    // targeting submit button and update node in graph
+    d3.select("#node-save-button").on("click", function () {
+      var thisForm = d3.select("#node-configuration-container");
+      var updatedNode = parseForm(thisForm);
+      thisGraph.updateNode.call(thisGraph, updatedNode)
+    })
+  };
+
+
+  var parseForm = function (thisForm) {
+    var formData = {};
+
+    if (thisForm == undefined) {
+      formData = {
+        "id": "-1",
+        "title": "way point",
+        "x": 0,
+        "y": 0,
+        "extraString": "stringify json?",
+        "metaData": "{\"key\":\"value\"}"
+      }
+      return formData
     }
 
 
-  };
+    (thisForm.selectAll("input, select, textarea")[0]).forEach(function (elem, index) {
+      var key = String(elem.getAttribute("name"));
+      var value = String(elem.value);
+      if (key == "x" || key == "y") {
+        formData[key] = Number(value);
+      } else if (key == "metaData") {
+        formData[key] = JSON.parse(value);
+      }
+      else {
+        formData[key] = value;
+      }
+    });
+    return formData
+  }
 
-  var generateTextInputHTML = function (id, label, fname, defaultValue) {
+  var generateTextInputHTML = function (id, label, fname, defaultValue, type = "text", readonly = false) {
     var html = "";
     html += `<label for="${id}">${label}</label>`;
-    html += `<input type="text" id="${id}" name="${fname}"> ${JSON.stringify(defaultValue)}<br>`;
+    html += `<input type="${type}" id="${id}" name="${fname}" value=${JSON.stringify(defaultValue)} ${readonly ? "readonly" : ""}></input><br>`;
     return html
+  }
+
+
+  GraphCreator.prototype.updateNode = function (updatedNode) {
+    var thisGraph = this;
+    var d = thisGraph.nodes.filter(function (n) { return n.id == updatedNode.id; })[0]
+
+    if (d == undefined) {
+      thisGraph.nodes.push(updatedNode)
+    }
+    else {
+      d.title = updatedNode.title;
+      d.x = updatedNode.x
+      d.y = updatedNode.y
+      d.extraString = updatedNode.extraString
+      d.metaData = updatedNode.metaData
+    }
+
+    thisGraph.updateGraph();
   }
 
 
@@ -551,7 +617,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     switch (d3.event.keyCode) {
       case consts.BACKSPACE_KEY:
       case consts.DELETE_KEY:
-        d3.event.preventDefault();
+        // d3.event.preventDefault();
         if (selectedNode) {
           thisGraph.nodes.splice(thisGraph.nodes.indexOf(selectedNode), 1);
           thisGraph.spliceLinksForNode(selectedNode);

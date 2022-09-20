@@ -51,7 +51,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       .append('svg:path')
       .attr('d', 'M0,-5L10,0L0,5');
 
-    thisGraph.svg = svg;
+    thisGraph.svg = svg; // background svg element
     thisGraph.svgG = svg.append("g")
       .classed(thisGraph.consts.graphClass, true);
     var svgG = thisGraph.svgG;
@@ -63,8 +63,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       .style('marker-end', 'url(#mark-end-arrow)');
 
     // svg nodes and edges
-    thisGraph.paths = svgG.append("g").selectAll("g");
-    thisGraph.circles = svgG.append("g").selectAll("g"); // all nodes
+    thisGraph.paths = svgG.append("g").selectAll("g");// all edge html element. 
+    thisGraph.circles = svgG.append("g").selectAll("g"); // all nodes html element. 
 
 
 
@@ -281,7 +281,6 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
   };
 
   GraphCreator.prototype.showXY = function (gEl, d) {
-    // console.log("init node: ", d)
 
     var el = gEl.append("text").attr("text-anchor", "middle").attr("text-type", "location").attr("node-id", d.id).attr("class", "data-location");
     el.append('tspan').attr('dy', 30).text("(" + d.x + ", " + d.y + ")")
@@ -340,7 +339,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
     (thisForm.selectAll("input, select, textarea")[0]).forEach(function (elem, index) {
       var key = String(elem.getAttribute("name"));
-      var value = String(elem.value);
+      var value = elem.value;
       if (key == "x" || key == "y") {
         formData[key] = Number(value);
       } else if (key == "metaData") {
@@ -359,11 +358,11 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     html += `<input type="${type}" id="${id}" name="${fname}" value=${JSON.stringify(defaultValue)} ${readonly ? "readonly" : ""}></input><br>`;
     return html
   }
-
-
+  
   GraphCreator.prototype.updateNode = function (updatedNode) {
     var thisGraph = this;
     var d = thisGraph.nodes.filter(function (n) { return n.id == updatedNode.id; })[0]
+    var d3node = thisGraph.circles.filter(function (n) { return n.id == updatedNode.id; })
 
     if (d == undefined) {
       thisGraph.nodes.push(updatedNode)
@@ -376,9 +375,13 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       d.metaData = updatedNode.metaData
     }
 
-    d3.select("g.conceptG.selected text.data-location tspan").remove();
-    d3.select("g.conceptG.selected text.data-location").append('tspan').attr('dy', 30).text("(" + d.x + ", " + d.y + ")");
+    // clean duplicate element information
+    d3node.selectAll("text").remove(); 
 
+    thisGraph.insertTitleLinebreaks(d3node, d.title); // append new title
+    thisGraph.buttonConfig(d3node, d); // pop out new div config
+    thisGraph.showXY(d3node, d); // display new x,y location
+      
     thisGraph.updateGraph();
   }
 

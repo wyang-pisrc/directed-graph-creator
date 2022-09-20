@@ -1,0 +1,216 @@
+{
+	"graph": {
+		"directed": true,
+		"type": "graph type",
+		"label": "pisrc office",
+		"scaleunit": "20cm",
+		"metadata": {
+			"start-point": "A1"
+		},
+		"nodes": {
+			"A1": {
+				"label": "node label(0)",
+				"metadata": {
+					"type": "checkpoint",
+					"position": {
+						"x": 0.0,
+						"y": 0.0
+					},
+					"level": "1",
+					"description": "start point for QR code-1"
+				}
+			},
+			"A2": {
+				"label": "node label(0)",
+				"metadata": {
+					"type": "waypoint",
+					"position": {
+						"x": 1.68,
+						"y": 0.0
+					},
+					"level": "1",
+					"description": "waypoint"
+				}
+			},
+			"A3": {
+				"label": "node label(0)",
+				"metadata": {
+					"type": "waypoint",
+					"position": {
+						"x": 1.68,
+						"y": 2.28
+					},
+					"level": "2",
+					"description": "waypoint"
+				}
+			},
+			"A4": {
+				"label": "node label(0)",
+				"metadata": {
+					"type": "checkpoint",
+					"position": {
+						"x": 3.33,
+						"y": 2.28
+					},
+					"level": "2",
+					"description": "checkpoint for entertaining zone"
+				}
+			},
+			"A5": {
+				"label": "node label(0)",
+				"metadata": {
+					"type": "waypoint",
+					"position": {
+						"x": 3.33,
+						"y": 0.14
+					},
+					"level": "3",
+					"description": "waypoint for testing"
+				}
+			},
+			"A6": {
+				"label": "node label(0)",
+				"metadata": {
+					"type": "waypoint",
+					"position": {
+						"x": 6.55,
+						"y": 0.14
+					},
+					"level": "1",
+					"description": "waypoint for testing"
+				}
+			},
+			"A7": {
+				"label": "node label(0)",
+				"metadata": {
+					"type": "waypoint",
+					"position": {
+						"x": 6.55,
+						"y": 2.45
+					},
+					"level": "4",
+					"description": "waypoint for testing"
+				}
+			},
+			"A8": {
+				"label": "node label(0)",
+				"metadata": {
+					"type": "waypoint",
+					"position": {
+						"x": 18.37,
+						"y": 2.45
+					},
+					"level": "1",
+					"description": "waypoint for testing"
+				}
+			},
+			"A9": {
+				"label": "node label(0)",
+				"metadata": {
+					"type": "waypoint",
+					"position": {
+						"x": 18.37,
+						"y": 0
+					},
+					"level": "1",
+					"description": "waypoint for testing"
+				}
+			}
+		},
+		"edges": [{
+				"source": "A1",
+				"relation": "edge relationship",
+				"target": "A2",
+				"directed": true,
+				"label": "edge E-A1-A2",
+				"metadata": {
+					"distance": 12
+				}
+			}, {
+				"source": "A2",
+				"relation": "edge relationship",
+				"target": "A3",
+				"directed": false,
+				"label": "edge E-A2-A3",
+				"metadata": {
+					"distance": 12
+				}
+			}, {
+				"source": "A2",
+				"relation": "edge relationship",
+				"target": "A5",
+				"directed": false,
+				"label": "edge E-A2-A5",
+				"metadata": {
+					"distance": 23
+				}
+			}, {
+				"source": "A3",
+				"relation": "edge relationship",
+				"target": "A4",
+				"directed": false,
+				"label": "edge E-A3-A4",
+				"metadata": {
+					"distance": 12
+				}
+			}, {
+				"source": "A5",
+				"relation": "edge relationship",
+				"target": "A6",
+				"directed": false,
+				"label": "edge E-A5-A6",
+				"metadata": {
+					"distance": 12
+				}
+			},
+			{
+				"source": "A6",
+				"relation": "edge relationship",
+				"target": "A7",
+				"directed": false,
+				"label": "edge E-A6-A7",
+				"metadata": {
+					"distance": 13
+				}
+			}, {
+				"source": "A7",
+				"relation": "edge relationship",
+				"target": "A8",
+				"directed": false,
+				"label": "edge E-A7-A8",
+				"metadata": {
+					"distance": 3
+				}
+			}, {
+				"source": "A7",
+				"relation": "edge relationship",
+				"target": "A9",
+				"directed": false,
+				"label": "edge E-A7-A9",
+				"metadata": {
+					"distance": 10
+				}
+			}, {
+				"source": "A8",
+				"relation": "edge relationship",
+				"target": "A9",
+				"directed": false,
+				"label": "edge E-A8-A9",
+				"metadata": {
+					"distance": 8
+				}
+			}, {
+				"source": "A9",
+				"relation": "edge relationship",
+				"target": "A10",
+				"directed": false,
+				"label": "edge E-A9-A10",
+				"metadata": {
+					"distance": 8
+				}
+			}
+
+
+		]
+	}
+}

@@ -35,6 +35,27 @@ body {
 
 }
 
+#edgeConfig {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-bottom: 0.5em;
+    margin-left: 1em;
+    border: 5px solid rgb(102, 190, 233);
+    border-radius: 5px;
+    padding: 1em;
+    z-index: 5;
+}
+
+
+#node-configuration-container.hidden {
+    display: none;
+}
+
+#edge-configuration-container.hidden {
+    display: none;
+}
+
 
 #toolbox {
     position: absolute;
@@ -128,7 +149,7 @@ path.link.hidden {
 }
 
 path.link.selected {
-    stroke: rgb(229, 172, 247);
+    stroke: rgb(102, 190, 233);
 }
 
 
@@ -145,6 +166,17 @@ div.button {
     z-index: 11;
 }
 
-#node-configuration-container.hidden{
-    display: none;
+
+.input-container {
+    display: flex;
+    justify-content: space-between;
+
+}
+
+.config-container {
+    margin-bottom: 10px;
+}
+
+.button-container {
+    margin-top: 10px;
 }

@@ -366,7 +366,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
   var generateTextInputHTML = function (id, label, fname, defaultValue, type = "text", readonly = false) {
     var html = "";
     html += `<label for="${id}">${label}</label>`;
-    html += `<input type="${type}" id="${id}" name="${fname}" value=${JSON.stringify(defaultValue)} ${readonly ? "readonly" : ""}></input><br>`;
+    html += `<input type="${type}" id="${id}" name="${fname}" value=${JSON.stringify(defaultValue)} ${readonly ? "readonly" : ""}></input>`;
     return html
   }
 
@@ -634,7 +634,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     switch (d3.event.keyCode) {
       case consts.BACKSPACE_KEY:
       case consts.DELETE_KEY:
-        // d3.event.preventDefault();
+        // TODO: how to tracking editing mode?  
+        d3.event.preventDefault(); 
         if (selectedNode) {
           thisGraph.nodes.splice(thisGraph.nodes.indexOf(selectedNode), 1);
           thisGraph.spliceLinksForNode(selectedNode);

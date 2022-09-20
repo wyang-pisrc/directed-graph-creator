@@ -147,10 +147,6 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     })
 
 
-
-
-
-
     svg.on("dblclick", function () {
       d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
       document.getElementById("node-save-button").click(); // auto save?
@@ -286,6 +282,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
   GraphCreator.prototype.showXY = function (gEl, d) {
     // console.log("init node: ", d)
+
     var el = gEl.append("text").attr("text-anchor", "middle").attr("text-type", "location").attr("node-id", d.id).attr("class", "data-location");
     el.append('tspan').attr('dy', 30).text("(" + d.x + ", " + d.y + ")")
   };
@@ -303,7 +300,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     for (let key in d) {
       if (key == "id") {
         el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key], "number", true))
-      } else if (key == "x" || key == "y") {
+      }
+      else if (key == "x" || key == "y") {
         el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key], "number", false))
       }
       else {
@@ -319,6 +317,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       var thisForm = d3.select("#node-configuration-container");
       var updatedNode = parseForm(thisForm);
       thisGraph.updateNode.call(thisGraph, updatedNode)
+
     })
   };
 
@@ -376,6 +375,9 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       d.extraString = updatedNode.extraString
       d.metaData = updatedNode.metaData
     }
+
+    d3.select("g.conceptG.selected text.data-location tspan").remove();
+    d3.select("g.conceptG.selected text.data-location").append('tspan').attr('dy', 30).text("(" + d.x + ", " + d.y + ")");
 
     thisGraph.updateGraph();
   }
@@ -495,8 +497,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       .on("blur", function (d) {
         d.title = this.textContent;
         thisGraph.insertTitleLinebreaks(d3node, d.title);
-        thisGraph.showXY(d3node, d);
         thisGraph.buttonConfig(d3node, d);
+        thisGraph.showXY(d3node, d);
         d3.select(this.parentElement).remove();
       });
     return d3txt;
@@ -716,8 +718,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     // TODO: update nodes
     newGs.each(function (d) {
       thisGraph.insertTitleLinebreaks(d3.select(this), d.title);
-      thisGraph.showXY(d3.select(this), d);
       thisGraph.buttonConfig(d3.select(this), d);
+      thisGraph.showXY(d3.select(this), d);
       console.log("create node location: ", d.x, " ++ ", d.y)
     });
 

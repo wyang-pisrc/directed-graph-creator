@@ -153,7 +153,9 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
     svg.on("dblclick", function () {
 
-      document.getElementById("node-save-button").click(); // auto save?
+      if (thisGraph.consts.autoSave){
+        document.getElementById("node-save-button").click(); 
+      }
       d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
       // d3.event.stopPropagation();
       if (thisGraph.state.selectedNode) {
@@ -234,7 +236,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     BACKSPACE_KEY: 8,
     DELETE_KEY: 46,
     ENTER_KEY: 13,
-    nodeRadius: 50
+    nodeRadius: 50,
+    autoSave: true
   };
 
   /* PROTOTYPE FUNCTIONS */

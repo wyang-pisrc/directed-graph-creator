@@ -82,9 +82,18 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
         // thisGraph.updateGraph();
         // d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
       })
-      .on("dragend", function () {
-        // todo check if edge-mode is selected //
-        //TODO: 需要转换到 选择当前拓转的 node
+      .on("dragend", function (d) {
+        var d3node = thisGraph.circles.filter(function (dval) {
+          return dval.id === d.id;
+        })
+        // thisGraph.replaceSelectNode(d3node, d)
+
+        var state = thisGraph.state
+        var prevNode = state.selectedNode;
+
+        if (!prevNode || prevNode.id !== d.id) {
+          thisGraph.replaceSelectNode(d3node, d);
+        }
       });
 
     // listen for key events
@@ -124,22 +133,17 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     // listen for resize
     window.onresize = function () { thisGraph.updateWindow(svg); };
 
-    // thisGraph.circles.forEach((gEL) => gEL.on('click', function (d, i) { alert("??") })); // 因为是后续添加的, 所以 js 无法 bind?
 
-    // 
     d3.selectAll("g g").on("click", function () {
       // TODO: figure out why selector g g can work, g or g g g not work
       console.log("click circle");
 
       var selectedNode = d3.select(".selected") // this is d3node
-      // selectedNode.node() // 会转换为 html
       if (selectedNode.size() != 0) {
         var thisID = selectedNode.select("text.data-location").attr("node-id")
         var d = thisGraph.nodes.filter(function (dval) {
           return dval.id.toString() === thisID;
         })[0]
-        // debugger
-        // console.log(d3node, d)
         thisGraph.buttonConfig(selectedNode, d);
         d3.select("#node-configuration-container").attr("visibility", "visible").attr("class", "visible");
       }
@@ -148,9 +152,13 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
 
     svg.on("dblclick", function () {
-      d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
+
       document.getElementById("node-save-button").click(); // auto save?
-      d3.event.stopPropagation();
+      d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
+      // d3.event.stopPropagation();
+      if (thisGraph.state.selectedNode) {
+        thisGraph.removeSelectFromNode();
+      }
       console.log("check background");
     })
 
@@ -358,7 +366,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     html += `<input type="${type}" id="${id}" name="${fname}" value=${JSON.stringify(defaultValue)} ${readonly ? "readonly" : ""}></input><br>`;
     return html
   }
-  
+
   GraphCreator.prototype.updateNode = function (updatedNode) {
     var thisGraph = this;
     var d = thisGraph.nodes.filter(function (n) { return n.id == updatedNode.id; })[0]
@@ -376,12 +384,12 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     }
 
     // clean duplicate element information
-    d3node.selectAll("text").remove(); 
+    d3node.selectAll("text").remove();
 
     thisGraph.insertTitleLinebreaks(d3node, d.title); // append new title
     thisGraph.buttonConfig(d3node, d); // pop out new div config
     thisGraph.showXY(d3node, d); // display new x,y location
-      
+
     thisGraph.updateGraph();
   }
 
@@ -407,6 +415,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
   };
 
   GraphCreator.prototype.replaceSelectNode = function (d3Node, nodeData) {
+    // show/hide when click node
     var thisGraph = this;
     d3Node.classed(this.consts.selectedClass, true);
     if (thisGraph.state.selectedNode) {
@@ -548,7 +557,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
           var d3txt = thisGraph.changeTextOfNode(d3node, d);
           var txtNode = d3txt.node();
           thisGraph.selectElementContents(txtNode);
-          txtNode.focus(); // 是这里可以修改吗, 如果我要修改的是 x,y的话? 也是 focus?
+          txtNode.focus();
         } else {
           if (state.selectedEdge) {
             thisGraph.removeSelectFromEdge();

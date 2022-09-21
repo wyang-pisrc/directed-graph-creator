@@ -84,7 +84,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
         d3.select(this).select("text[text-type=location] tspan").text("(" + round(d.x, thisGraph.consts.roundToDecimal) + ", " + round(d.y, thisGraph.consts.roundToDecimal) + ")") // dynamics show x.y
         // .text("(" + d.x + ", " + d.y + ")")
         // .style("background-color", "red")
-        // thisGraph.buttonConfig(d3node, d);
+        // thisGraph.showNodeConfig(d3node, d);
         // thisGraph.nodes.push(d);
         // thisGraph.updateGraph();
         // d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
@@ -148,13 +148,13 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
         if (selectedElement.size() != 0) {
           if (thisGraph.state.selectedNode) {
             console.log("click node")
-            thisGraph.buttonConfig(selectedElement, thisGraph.state.selectedNode);
+            thisGraph.showNodeConfig(selectedElement, thisGraph.state.selectedNode);
             d3.select("#node-configuration-container").attr("visibility", "visible").attr("class", "visible");
             d3.select("#edge-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
           }
           else if (thisGraph.state.selectedEdge) {
             console.log("click edge")
-            // thisGraph.buttonConfig(selectedElement, thisGraph.state.selectedNode);
+            thisGraph.showEdgeConfig(selectedElement, thisGraph.state.selectedEdge);
             d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
             d3.select("#edge-configuration-container").attr("visibility", "visible").attr("class", "visible");
           }
@@ -190,7 +190,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     d3.select("#download-input").on("click", function () {
       var saveEdges = [];
       thisGraph.edges.forEach(function (val, i) {
-        saveEdges.push({ source: val.source.id, target: val.target.id });
+        saveEdges.push({ source: val.source.id, target: val.target.id, metadata: val.metadata });
       });
 
       // scale down
@@ -347,7 +347,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     el.append('tspan').attr('dy', 30).text("(" + round(d.x, this.consts.roundToDecimal) + ", " + round(d.y, this.consts.roundToDecimal) + ")")
   };
 
-  GraphCreator.prototype.buttonConfig = function (gEl, d) {
+  GraphCreator.prototype.showNodeConfig = function (gEl, d) {
     var thisGraph = this;
 
     // remove previous form content
@@ -389,7 +389,6 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     })
 
     d3.select("#node-remove-button").on("click", function () {
-
       // remove node
       var selectedNode = thisGraph.state.selectedNode;
       // selectedEdge = thisGraph.state.selectedEdge;
@@ -403,6 +402,49 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     })
   };
 
+
+  GraphCreator.prototype.showEdgeConfig = function (gEl, d) {
+    var thisGraph = this;
+
+    // remove previous form content
+    if (d3.select("#edgeConfig form")) {
+      d3.select("#edgeConfig form").remove("form")
+    }
+
+    // targeting form container and insert edge information
+    var el = d3.select("#edgeConfig").append("form").attr("id", "edge-configuration-container").attr("visibility", "visible").attr("class", "visible")
+    for (let key in d) {
+      if (key == "metadata") {
+        el.append("div").attr("class", "input-container").html(generateInputHTML(key, key, key, d[key], "textarea"))
+      }
+      else {
+        el.append("div").attr("class", "input-container").html(generateInputHTML(key, key, key, d[key].id, "text", true))
+      }
+    }
+    // add button tag
+    el.append("div").attr("class", "button-container").html(`<button class="button-76" type="button" id="edge-save-button"><span class="text">Save</span></button>
+    <button class="button-76" type="button" id="edge-remove-button"><span class="text">Remove</span></button>`)
+
+    // targeting submit button and update node in graph
+    d3.select("#edge-save-button").on("click", function () {
+      var thisForm = d3.select("#edge-configuration-container");
+      // TODO: update edge info
+      // var updatedNode = parseForm(thisForm);
+      // thisGraph.updateNode.call(thisGraph, updatedNode)
+    })
+
+    d3.select("#edge-remove-button").on("click", function () {
+      // remove edge
+      var selectedEdge = thisGraph.state.selectedEdge;
+    
+      thisGraph.edges.splice(thisGraph.edges.indexOf(selectedEdge), 1);
+      thisGraph.state.selectedEdge = null;
+      thisGraph.updateGraph();
+
+      d3.select("#edge-configuration-container").attr("visibility", "hidden").attr("class", "hidden"); // hide container
+
+    })
+  };
 
   var parseForm = function (thisForm) {
     var formData = {};
@@ -456,6 +498,9 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
   }
 
 
+
+
+
   GraphCreator.prototype.updateNode = function (updatedNode) {
     var thisGraph = this;
     var d = thisGraph.nodes.filter(function (n) { return n.id == updatedNode.id; })[0]
@@ -476,7 +521,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     d3node.selectAll("text").remove();
 
     thisGraph.insertTitleLinebreaks(d3node, d.title); // append new title
-    thisGraph.buttonConfig(d3node, d); // pop out new div config
+    thisGraph.showNodeConfig(d3node, d); // pop out new div config
     thisGraph.showXY(d3node, d); // display new x,y location
 
     thisGraph.updateGraph();
@@ -598,7 +643,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       .on("blur", function (d) {
         d.title = this.textContent;
         thisGraph.insertTitleLinebreaks(d3node, d.title);
-        thisGraph.buttonConfig(d3node, d);
+        thisGraph.showNodeConfig(d3node, d);
         thisGraph.showXY(d3node, d);
         d3.select(this.parentElement).remove();
       });
@@ -623,7 +668,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
     if (mouseDownNode !== d) {
       // we're in a different node: create new edge for mousedown edge and add to graph
-      var newEdge = { source: mouseDownNode, target: d, metadata };
+      var metadata = { distance: 10 }
+      var newEdge = { source: mouseDownNode, target: d, metadata: metadata };
       var filtRes = thisGraph.paths.filter(function (d) {
         if (d.source === newEdge.target && d.target === newEdge.source) {
           thisGraph.edges.splice(thisGraph.edges.indexOf(d), 1);
@@ -828,7 +874,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     // update nodes
     newGs.each(function (d) {
       thisGraph.insertTitleLinebreaks(d3.select(this), d.title);
-      thisGraph.buttonConfig(d3.select(this), d);
+      thisGraph.showNodeConfig(d3.select(this), d);
       thisGraph.showXY(d3.select(this), d);
       console.log("create node location: (", d.x + ", " + d.y, ")")
     });

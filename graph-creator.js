@@ -384,7 +384,6 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     d3.select("#node-save-button").on("click", function () {
       var thisForm = d3.select("#node-configuration-container");
       var updatedNode = parseForm(thisForm);
-      console.log(updatedNode)
       thisGraph.updateNode.call(thisGraph, updatedNode)
 
     })
@@ -471,7 +470,6 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       d.y = updatedNode.y
       d.levelCode = updatedNode.levelCode
       d.metadata = updatedNode.metadata
-      console.log(updatedNode.metadata)
     }
 
     // clean duplicate element information

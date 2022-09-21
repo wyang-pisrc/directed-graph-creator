@@ -3,7 +3,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
   // TODO add user settings
   var consts = {
-    defaultTitle: "way point"
+    defaultTitle: "way point A"
   };
   var settings = {
     appendElSpec: "#graph"
@@ -187,7 +187,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       // scale down
       for (let node of thisGraph.nodes) {
         node.x = node.x / thisGraph.consts.scaleUnit;
-        node.y = node.x / thisGraph.consts.scaleUnit;
+        node.y = node.y / thisGraph.consts.scaleUnit;
       }
 
       var blob = new Blob([window.JSON.stringify({ "config": thisGraph.consts, "nodes": thisGraph.nodes, "edges": saveEdges })], { type: "text/plain;charset=utf-8" });
@@ -197,7 +197,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
       for (let node of thisGraph.nodes) {
         node.x = node.x * thisGraph.consts.scaleUnit;
-        node.y = node.x * thisGraph.consts.scaleUnit;
+        node.y = node.y * thisGraph.consts.scaleUnit;
       }
     });
 
@@ -221,7 +221,16 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
           try {
             var jsonObj = JSON.parse(txtRes);
             thisGraph.deleteGraph(true);
+
+            thisGraph.consts = jsonObj.config;
             thisGraph.nodes = jsonObj.nodes;
+
+            thisGraph.consts.scaleUnit
+            for (let node of thisGraph.nodes) {
+              node.x = node.x * thisGraph.consts.scaleUnit;
+              node.y = node.y * thisGraph.consts.scaleUnit;
+            }
+
             thisGraph.setIdCt(jsonObj.nodes.length + 1);
             var newEdges = jsonObj.edges;
             newEdges.forEach(function (e, i) {

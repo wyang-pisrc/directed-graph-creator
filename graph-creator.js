@@ -166,14 +166,23 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
 
     svg.on("dblclick", function () {
-      if (thisGraph.state.selectedNode != null && thisGraph.consts.autoSave) { // shift delete and click background will not trigger this.
-        document.getElementById("node-save-button").click();
+
+      if (thisGraph.consts.autoSave) { // shift delete and click background will not trigger this.
+        if (thisGraph.state.selectedNode != null) { document.getElementById("node-save-button").click(); }
+        if (thisGraph.state.selectedEdge != null) { document.getElementById("edge-save-button").click(); }
       }
+
       d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
+      d3.select("#edge-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
       // d3.event.stopPropagation();
+
       if (thisGraph.state.selectedNode) {
         thisGraph.removeSelectFromNode();
       }
+      else if (thisGraph.state.selectedEdge) {
+        thisGraph.removeSelectFromEdge();
+      }
+
       console.log("check background");
     })
 
@@ -350,13 +359,19 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     var el = d3.select("#nodeConfig").append("form").attr("id", "node-configuration-container").attr("visibility", "visible").attr("class", "visible")
     for (let key in d) {
       if (key == "id") {
-        el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key], "number", true))
+        el.append("div").attr("class", "input-container").html(generateInputHTML(key, key, key, d[key], "number", true))
       }
       else if (key == "x" || key == "y") {
-        el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, round(d[key], thisGraph.consts.roundToDecimal), "number", false))
+        el.append("div").attr("class", "input-container").html(generateInputHTML(key, key, key, round(d[key], thisGraph.consts.roundToDecimal), "number"))
+      }
+      else if (key == "levelCode") {
+        el.append("div").attr("class", "input-container").html(generateInputHTML(key, key, key, d[key], "dropdown", false, thisGraph.consts.levelCodes))
+      }
+      else if (key == "metadata") {
+        el.append("div").attr("class", "input-container").html(generateInputHTML(key, key, key, d[key], "textarea"))
       }
       else {
-        el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key]))
+        el.append("div").attr("class", "input-container").html(generateInputHTML(key, key, key, d[key]))
       }
     }
 
@@ -369,6 +384,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     d3.select("#node-save-button").on("click", function () {
       var thisForm = d3.select("#node-configuration-container");
       var updatedNode = parseForm(thisForm);
+      console.log(updatedNode)
       thisGraph.updateNode.call(thisGraph, updatedNode)
 
     })
@@ -399,7 +415,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
         "x": 0,
         "y": 0,
         "levelCode": "level-A",
-        "metaData": "{\"key\":\"value\"}"
+        "metadata": "{\"key\":\"value\"}"
       }
       return formData
     }
@@ -410,7 +426,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       var value = elem.value;
       if (key == "x" || key == "y") {
         formData[key] = Number(value);
-      } else if (key == "metaData") {
+      } else if (key == "metadata") {
         formData[key] = JSON.parse(value);
       }
       else {
@@ -420,12 +436,26 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     return formData
   }
 
-  var generateTextInputHTML = function (id, label, fname, defaultValue, type = "text", readonly = false) {
-    var html = "";
-    html += `<label for="${id}">${label}</label>`;
-    html += `<input type="${type}" id="${id}" name="${fname}" value=${JSON.stringify(defaultValue)} ${readonly ? "readonly" : ""}></input>`;
+  var generateInputHTML = function (id, label, fname, defaultValue, type = "text", readonly = false, options = []) {
+
+    var html = `<label for="${id}">${label}</label>`;
+    if (type == "text" || type == "number") {
+      html += `<input type="${type}" id="${id}" name="${fname}" value=${JSON.stringify(defaultValue)} ${readonly ? "readonly" : ""}></input>`;
+    }
+    else if (type == "textarea") {
+      html += `<textarea id="${id}" rows="1" cols="13" name="${fname}" ${readonly ? "readonly" : ""}>${JSON.stringify(defaultValue)}</textarea>`; // hardcode width yet
+    }
+    else if (type == "dropdown") {
+      html += `<select id="${id}" name="${fname}" value=${JSON.stringify(defaultValue)} ${readonly ? "readonly" : ""}>`
+      for (let option of options) {
+        html += `<option value="${option}" ${(option == defaultValue) ? "selected" : ""}>${option}</option>`
+      }
+      html += `</select > `
+    }
+
     return html
   }
+
 
   GraphCreator.prototype.updateNode = function (updatedNode) {
     var thisGraph = this;
@@ -440,7 +470,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       d.x = updatedNode.x
       d.y = updatedNode.y
       d.levelCode = updatedNode.levelCode
-      d.metaData = updatedNode.metaData
+      d.metadata = updatedNode.metadata
+      console.log(updatedNode.metadata)
     }
 
     // clean duplicate element information
@@ -594,7 +625,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
     if (mouseDownNode !== d) {
       // we're in a different node: create new edge for mousedown edge and add to graph
-      var newEdge = { source: mouseDownNode, target: d };
+      var newEdge = { source: mouseDownNode, target: d, metadata };
       var filtRes = thisGraph.paths.filter(function (d) {
         if (d.source === newEdge.target && d.target === newEdge.source) {
           thisGraph.edges.splice(thisGraph.edges.indexOf(d), 1);
@@ -653,10 +684,10 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     } else if (state.graphMouseDown && d3.event.shiftKey) {
       // clicked not dragged from svg
       var levelCode = "level-A"
-      var metaData = { key: "value" }
+      var metadata = { key: "value" }
 
       var xycoords = d3.mouse(thisGraph.svgG.node())
-      var d = { id: thisGraph.idct++, title: consts.defaultTitle, x: xycoords[0], y: xycoords[1], levelCode: levelCode, metaData: metaData };
+      var d = { id: thisGraph.idct++, title: consts.defaultTitle, x: xycoords[0], y: xycoords[1], levelCode: levelCode, metadata: metadata };
       thisGraph.nodes.push(d);
       thisGraph.updateGraph();
       // console.log("create node:", d)

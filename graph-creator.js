@@ -8,6 +8,12 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
   var settings = {
     appendElSpec: "#graph"
   };
+
+  var round = function (value, precision) {
+    var multiplier = Math.pow(10, precision || 0);
+    return Math.round(value * multiplier) / multiplier;
+  }
+
   // define graphcreator object
   var GraphCreator = function (svg, nodes, edges) {
     var thisGraph = this;
@@ -75,7 +81,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       .on("drag", function (d) {
         thisGraph.state.justDragged = true;
         thisGraph.dragmove.call(thisGraph, d);
-        d3.select(this).select("text[text-type=location] tspan").text("(" + d.x + ", " + d.y + ")") // dynamics show x.y
+        d3.select(this).select("text[text-type=location] tspan").text("(" + round(d.x, thisGraph.consts.roundToDecimal) + ", " + round(d.y, thisGraph.consts.roundToDecimal) + ")") // dynamics show x.y
+        // .text("(" + d.x + ", " + d.y + ")")
         // .style("background-color", "red")
         // thisGraph.buttonConfig(d3node, d);
         // thisGraph.nodes.push(d);
@@ -153,8 +160,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
     svg.on("dblclick", function () {
 
-      if (thisGraph.consts.autoSave){
-        document.getElementById("node-save-button").click(); 
+      if (thisGraph.consts.autoSave) {
+        document.getElementById("node-save-button").click();
       }
       d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
       // d3.event.stopPropagation();
@@ -170,10 +177,25 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       thisGraph.edges.forEach(function (val, i) {
         saveEdges.push({ source: val.source.id, target: val.target.id });
       });
-      var blob = new Blob([window.JSON.stringify({ "nodes": thisGraph.nodes, "edges": saveEdges })], { type: "text/plain;charset=utf-8" });
+
+      // scale down
+      for (let node of thisGraph.nodes) {
+        node.x = node.x / thisGraph.consts.scaleUnit;
+        node.y = node.x / thisGraph.consts.scaleUnit;
+      }
+
+      var blob = new Blob([window.JSON.stringify({ "config": thisGraph.consts, "nodes": thisGraph.nodes, "edges": saveEdges })], { type: "text/plain;charset=utf-8" });
       saveAs(blob, "mydag.json");
+
+      // // scale back
+
+      for (let node of thisGraph.nodes) {
+        node.x = node.x * thisGraph.consts.scaleUnit;
+        node.y = node.x * thisGraph.consts.scaleUnit;
+      }
     });
 
+    // TODO: 修改 remove 的 button
 
 
     // handle uploaded data
@@ -237,7 +259,11 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     DELETE_KEY: 46,
     ENTER_KEY: 13,
     nodeRadius: 50,
-    autoSave: true
+    autoSave: true,
+    levelCodes: ['level-A', 'level-B', 'level-C'],
+    scaleUnit: 100,
+    graphName: "pisrc-office",
+    roundToDecimal: 4,
   };
 
   /* PROTOTYPE FUNCTIONS */
@@ -294,7 +320,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
   GraphCreator.prototype.showXY = function (gEl, d) {
 
     var el = gEl.append("text").attr("text-anchor", "middle").attr("text-type", "location").attr("node-id", d.id).attr("class", "data-location");
-    el.append('tspan').attr('dy', 30).text("(" + d.x + ", " + d.y + ")")
+    el.append('tspan').attr('dy', 30).text("(" + round(d.x, this.consts.roundToDecimal) + ", " + round(d.y, this.consts.roundToDecimal) + ")")
   };
 
   GraphCreator.prototype.buttonConfig = function (gEl, d) {
@@ -312,15 +338,17 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
         el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key], "number", true))
       }
       else if (key == "x" || key == "y") {
-        el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key], "number", false))
+        el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, round(d[key], thisGraph.consts.roundToDecimal), "number", false))
       }
       else {
         el.append("div").attr("class", "input-container").html(generateTextInputHTML(key, key, key, d[key]))
       }
     }
 
+
     // add button tag
-    el.append("div").attr("class", "button-container").html(`<button type="button" id="node-save-button" value="Save">save</button>`)
+    el.append("div").attr("class", "button-container").html(`<button class="button-75" type="button" id="node-save-button"><span class="text">Save</span></button>
+    <button class="button-75" type="button" id="node-remove-button"><span class="text">Remove</span></button>`)
 
     // targeting submit button and update node in graph
     d3.select("#node-save-button").on("click", function () {
@@ -341,7 +369,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
         "title": "way point",
         "x": 0,
         "y": 0,
-        "extraString": "stringify json?",
+        "levelCode": "level-A",
         "metaData": "{\"key\":\"value\"}"
       }
       return formData
@@ -382,7 +410,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       d.title = updatedNode.title;
       d.x = updatedNode.x
       d.y = updatedNode.y
-      d.extraString = updatedNode.extraString
+      d.levelCode = updatedNode.levelCode
       d.metaData = updatedNode.metaData
     }
 
@@ -595,11 +623,11 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       state.justScaleTransGraph = false;
     } else if (state.graphMouseDown && d3.event.shiftKey) {
       // clicked not dragged from svg
-      var extraString = "stringify json?"
+      var levelCode = "level-A"
       var metaData = { key: "value" }
 
       var xycoords = d3.mouse(thisGraph.svgG.node())
-      var d = { id: thisGraph.idct++, title: consts.defaultTitle, x: xycoords[0], y: xycoords[1], extraString: extraString, metaData: metaData };
+      var d = { id: thisGraph.idct++, title: consts.defaultTitle, x: xycoords[0], y: xycoords[1], levelCode: levelCode, metaData: metaData };
       thisGraph.nodes.push(d);
       thisGraph.updateGraph();
       // console.log("create node:", d)
@@ -634,18 +662,19 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     switch (d3.event.keyCode) {
       case consts.BACKSPACE_KEY:
       case consts.DELETE_KEY:
+        console.log("DELETE_KEY BACKSPACE_KEY");
         // TODO: how to tracking editing mode?  
-        d3.event.preventDefault(); 
-        if (selectedNode) {
-          thisGraph.nodes.splice(thisGraph.nodes.indexOf(selectedNode), 1);
-          thisGraph.spliceLinksForNode(selectedNode);
-          state.selectedNode = null;
-          thisGraph.updateGraph();
-        } else if (selectedEdge) {
-          thisGraph.edges.splice(thisGraph.edges.indexOf(selectedEdge), 1);
-          state.selectedEdge = null;
-          thisGraph.updateGraph();
-        }
+        // d3.event.preventDefault();
+        // if (selectedNode) {
+        //   thisGraph.nodes.splice(thisGraph.nodes.indexOf(selectedNode), 1);
+        //   thisGraph.spliceLinksForNode(selectedNode);
+        //   state.selectedNode = null;
+        //   thisGraph.updateGraph();
+        // } else if (selectedEdge) {
+        //   thisGraph.edges.splice(thisGraph.edges.indexOf(selectedEdge), 1);
+        //   state.selectedEdge = null;
+        //   thisGraph.updateGraph();
+        // }
         break;
     }
   };
@@ -731,7 +760,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       .attr("r", String(consts.nodeRadius));
 
 
-    // TODO: update nodes
+    // update nodes
     newGs.each(function (d) {
       thisGraph.insertTitleLinebreaks(d3.select(this), d.title);
       thisGraph.buttonConfig(d3.select(this), d);
@@ -747,6 +776,8 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
     this.state.justScaleTransGraph = true;
     d3.select("." + this.consts.graphClass)
       .attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
+    // .attr("transform", "translate(" + d3.event.translate + ") scale(" + Math.round(d3.event.scale, this.consts.roundToDecimal) + ")");
+    // console.log("scale", d3.event.scale)
   };
 
   GraphCreator.prototype.updateWindow = function (svg) {

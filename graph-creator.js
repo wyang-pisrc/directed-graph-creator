@@ -143,16 +143,21 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
     d3.selectAll("g g").on("click", function () {
       // TODO: figure out why selector g g can work, g or g g g not work
-      console.log("click node")
       if (!d3.event.shiftKey) { // shift click will not trigger this
-        var selectedNode = d3.select(".selected") // this is d3node
-        if (selectedNode.size() != 0) {
-          var thisID = selectedNode.select("text.data-location").attr("node-id")
-          var d = thisGraph.nodes.filter(function (dval) {
-            return dval.id.toString() === thisID;
-          })[0]
-          thisGraph.buttonConfig(selectedNode, d);
-          d3.select("#node-configuration-container").attr("visibility", "visible").attr("class", "visible");
+        var selectedElement = d3.select(".selected") // this is d3node element
+        if (selectedElement.size() != 0) {
+          if (thisGraph.state.selectedNode) {
+            console.log("click node")
+            thisGraph.buttonConfig(selectedElement, thisGraph.state.selectedNode);
+            d3.select("#node-configuration-container").attr("visibility", "visible").attr("class", "visible");
+            d3.select("#edge-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
+          }
+          else if (thisGraph.state.selectedEdge) {
+            console.log("click edge")
+            // thisGraph.buttonConfig(selectedElement, thisGraph.state.selectedNode);
+            d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
+            d3.select("#edge-configuration-container").attr("visibility", "visible").attr("class", "visible");
+          }
         }
       }
 
@@ -356,6 +361,20 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       var thisForm = d3.select("#node-configuration-container");
       var updatedNode = parseForm(thisForm);
       thisGraph.updateNode.call(thisGraph, updatedNode)
+
+    })
+
+    d3.select("#node-remove-button").on("click", function () {
+
+      // remove node
+      var selectedNode = thisGraph.state.selectedNode;
+      // selectedEdge = thisGraph.state.selectedEdge;
+      thisGraph.nodes.splice(thisGraph.nodes.indexOf(selectedNode), 1);
+      thisGraph.spliceLinksForNode(selectedNode);
+      thisGraph.state.selectedNode = null;
+      thisGraph.updateGraph();
+
+      d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden"); // hide container
 
     })
   };

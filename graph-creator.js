@@ -143,24 +143,25 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
 
     d3.selectAll("g g").on("click", function () {
       // TODO: figure out why selector g g can work, g or g g g not work
-      console.log("click circle");
-
-      var selectedNode = d3.select(".selected") // this is d3node
-      if (selectedNode.size() != 0) {
-        var thisID = selectedNode.select("text.data-location").attr("node-id")
-        var d = thisGraph.nodes.filter(function (dval) {
-          return dval.id.toString() === thisID;
-        })[0]
-        thisGraph.buttonConfig(selectedNode, d);
-        d3.select("#node-configuration-container").attr("visibility", "visible").attr("class", "visible");
+      console.log("click node")
+      if (!d3.event.shiftKey) { // shift click will not trigger this
+        var selectedNode = d3.select(".selected") // this is d3node
+        if (selectedNode.size() != 0) {
+          var thisID = selectedNode.select("text.data-location").attr("node-id")
+          var d = thisGraph.nodes.filter(function (dval) {
+            return dval.id.toString() === thisID;
+          })[0]
+          thisGraph.buttonConfig(selectedNode, d);
+          d3.select("#node-configuration-container").attr("visibility", "visible").attr("class", "visible");
+        }
       }
+
 
     })
 
 
     svg.on("dblclick", function () {
-
-      if (thisGraph.consts.autoSave) {
+      if (thisGraph.state.selectedNode != null && thisGraph.consts.autoSave) { // shift delete and click background will not trigger this.
         document.getElementById("node-save-button").click();
       }
       d3.select("#node-configuration-container").attr("visibility", "hidden").attr("class", "hidden");
@@ -653,29 +654,36 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       state = thisGraph.state,
       consts = thisGraph.consts;
     // make sure repeated key presses don't register for each keydown
-    if (state.lastKeyDown !== -1) return;
+    if (state.lastKeyDown !== -1) {
+      return
+    };
 
+    // if (d3.event.keyCode !== state.lastKeyDown) {
+    //   state.lastKeyDown = d3.event.keyCode;
+    // }
+    // console.log(d3.event.keyCode, state.lastKeyDown)
     state.lastKeyDown = d3.event.keyCode;
     var selectedNode = state.selectedNode,
       selectedEdge = state.selectedEdge;
 
-    switch (d3.event.keyCode) {
-      case consts.BACKSPACE_KEY:
-      case consts.DELETE_KEY:
-        console.log("DELETE_KEY BACKSPACE_KEY");
-        // TODO: how to tracking editing mode?  
-        // d3.event.preventDefault();
-        // if (selectedNode) {
-        //   thisGraph.nodes.splice(thisGraph.nodes.indexOf(selectedNode), 1);
-        //   thisGraph.spliceLinksForNode(selectedNode);
-        //   state.selectedNode = null;
-        //   thisGraph.updateGraph();
-        // } else if (selectedEdge) {
-        //   thisGraph.edges.splice(thisGraph.edges.indexOf(selectedEdge), 1);
-        //   state.selectedEdge = null;
-        //   thisGraph.updateGraph();
-        // }
-        break;
+    if (d3.event.shiftKey) {
+      switch (d3.event.keyCode) {
+        case consts.BACKSPACE_KEY:
+        case consts.DELETE_KEY:
+          console.log("DELETE_KEY BACKSPACE_KEY");
+          d3.event.preventDefault();
+          if (selectedNode) {
+            thisGraph.nodes.splice(thisGraph.nodes.indexOf(selectedNode), 1);
+            thisGraph.spliceLinksForNode(selectedNode);
+            state.selectedNode = null;
+            thisGraph.updateGraph();
+          } else if (selectedEdge) {
+            thisGraph.edges.splice(thisGraph.edges.indexOf(selectedEdge), 1);
+            state.selectedEdge = null;
+            thisGraph.updateGraph();
+          }
+          break;
+      }
     }
   };
 
@@ -765,7 +773,7 @@ document.onload = (function (d3, saveAs, Blob, undefined) {
       thisGraph.insertTitleLinebreaks(d3.select(this), d.title);
       thisGraph.buttonConfig(d3.select(this), d);
       thisGraph.showXY(d3.select(this), d);
-      console.log("create node location: ", d.x, " ++ ", d.y)
+      console.log("create node location: (", d.x + ", " + d.y, ")")
     });
 
     // remove old nodes
